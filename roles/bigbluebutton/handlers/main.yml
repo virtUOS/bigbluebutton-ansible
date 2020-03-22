@@ -1,0 +1,9 @@
+---
+
+- name: restart bbb
+  command: bbb-conf --restart
+
+- name: reload nginx
+  service:
+    name: nginx
+    state: reloaded

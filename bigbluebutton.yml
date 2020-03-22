@@ -1,0 +1,9 @@
+---
+
+- hosts: server
+  become: true
+  vars_files:
+    - secret-vars.yml
+  roles:
+    - bigbluebutton
+    - greenlight

@@ -1,0 +1,62 @@
+---
+
+- name: add additional repositories
+  apt_repository:
+    repo: '{{ item }}'
+  with_items:
+    - deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+
+- name: add additional apt keys
+  apt_key:
+    url: '{{ item }}'
+  with_items:
+    - https://download.docker.com/linux/ubuntu/gpg
+
+- name: install dependencies
+  apt:
+    update_cache: true
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose
+
+- name: make base repository present
+  file:
+    state: directory
+    path: /opt/greenlight
+
+- name: create docker-compose
+  copy:
+    src: docker-compose.yml
+    dest: /opt/greenlight/docker-compose.yml
+    force: true
+
+- name: create config
+  template:
+    src: env.j2
+    dest: /opt/greenlight/.env
+
+- name: copy nginx config
+  copy:
+    src: greenlight.nginx
+    dest: /etc/bigbluebutton/nginx/greenlight.nginx
+  notify: reload nginx
+
+- name: configure NGINX to use greenlight as default for bbb
+  blockinfile:
+    path: /etc/nginx/sites-available/bigbluebutton
+    insertbefore: '^}'
+    marker_begin: 'BEGIN GREENLIGHT'
+    marker_end: 'END GREENLIGHT'
+    block: |
+        location = / {
+            return 307 /b;
+        }
+  notify: reload nginx
+
+
+- name: start greenlight
+  command: docker-compose up -d
+  args:
+    chdir: /opt/greenlight
