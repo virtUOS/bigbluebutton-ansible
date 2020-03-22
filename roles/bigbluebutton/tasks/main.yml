@@ -8,6 +8,7 @@
 - name: add additional repositories
   apt_repository:
     repo: '{{ item }}'
+    update_cache: no
   with_items:
     - ppa:bigbluebutton/support
     - ppa:rmescandon/yq
@@ -21,8 +22,12 @@
     url: '{{ item }}'
   with_items:
     - https://www.mongodb.org/static/pgp/server-3.4.asc
-    - https://deb.nodesource.com/gpgkey/nodesource.gpg.key
     - https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc
+
+- name: add NodeSource apt keys
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280
 
 - name: install dependencies
   apt:
@@ -34,9 +39,15 @@
       - openjdk-8-jdk
       - nodejs
       - bigbluebutton
-      - bbb-html5
       - certbot
       - python-certbot-nginx
+  notify: restart bbb
+
+- name: install bbb-html5
+  apt:
+    update_cache: true
+    name:
+      - bbb-html5
   notify: restart bbb
 
 - name: make html5 client the default client
@@ -72,13 +83,26 @@
     dest: /etc/nginx/ssl/dhparam.pem
   notify: reload nginx
 
+- name: remove nginx default config
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
 - name: configure NGINX for bbb
   blockinfile:
     path: /etc/nginx/sites-available/bigbluebutton
-    insertafter: 'server {'
+    insertbefore: 'server_name'
     marker_begin: 'BEGIN BBB'
     marker_end: 'END BBB'
     block: |
+        server_name _;
+        location / {
+        return 301 https://{{ ansible_host }}$request_uri;
+        }
+        }
+
+        server {
         listen 443 ssl;
         listen [::]:443 ssl;
 
