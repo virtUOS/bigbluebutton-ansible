@@ -1,0 +1,5 @@
+---
+
+bbb_secret: '{{ vault_bbb_secret }}'
+greenlight_secret: '{{ vault_greenlight_secret }}'
+email: lars@kiesow.io
