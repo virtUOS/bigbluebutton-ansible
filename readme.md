@@ -15,6 +15,8 @@ Important Notes
   Reencode it using a proper password.
     - Make sure to generate new secrets and encrypt them in the ansible vault at `group_vars/all/vault.yml`.
       _Never_ use the vars set in here for production.
+- The certificates provided in here are just dummy certificates and will only be deployed if no other certificates are in place.
+  Once deployed, replace them with valid certificates and reload Nginx.
 
 
 Todo
@@ -24,5 +26,6 @@ Here are some things to expand on:
 
 - [ ] Adding more configuration options.
 - [ ] Adding initial user setup
+- [ ] Improve the TLS setup for Nginx
 - [ ] Making this work on other distributions
 - [ ] Adding support for the [Scalable load balancer for BigBlueButton](https://github.com/blindsidenetworks/scalelite)
