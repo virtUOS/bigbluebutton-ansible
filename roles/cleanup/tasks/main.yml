@@ -1,0 +1,21 @@
+---
+
+- name: install workaround services
+  copy:
+    src: '{{ item }}'
+    dest: /etc/systemd/system/{{ item }}
+  loop:
+    - scheduled-reboot.service
+    - scheduled-reboot.timer
+    - scheduled-recording-cleanup.service
+    - scheduled-recording-cleanup.timer
+  notify: restart workaround
+
+- name: start workaround service
+  service:
+    name: '{{ item }}'
+    state: started
+    enabled: yes
+  loop:
+    - scheduled-reboot.timer
+    - scheduled-recording-cleanup.timer

@@ -1,0 +1,6 @@
+[Unit]
+Description=Scheduled Reboot
+
+[Service]
+Type=simple
+ExecStart=/sbin/reboot

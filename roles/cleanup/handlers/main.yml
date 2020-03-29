@@ -1,0 +1,9 @@
+---
+
+- name: restart workaround
+  service:
+    name: nginx
+    state: restarted
+  loop:
+    - scheduled-reboot.timer
+    - scheduled-recording-cleanup.timer

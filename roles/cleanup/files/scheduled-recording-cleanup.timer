@@ -1,0 +1,8 @@
+[Unit]
+Description=BigBlueButton Recording Cleanup Scheduling.
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+
+[Install]
+WantedBy=multi-user.target
