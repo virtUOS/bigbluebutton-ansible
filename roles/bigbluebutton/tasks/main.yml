@@ -167,6 +167,20 @@
   command: bbb-conf --setsecret {{ bbb_secret }}
   notify: restart bbb
 
+- name: configure default camere quality
+  replace:
+    path: /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml
+    after: '- id: *{{ item.id }}'
+    before: '-'
+    regexp: 'default: *.*$'
+    replace: 'default: {{ item.default }}'
+  loop:
+    - {id: low, default: 'true'}
+    - {id: medium, default: 'false'}
+    - {id: high, default: 'false'}
+    - {id: hd, default: 'false'}
+  notify: restart bbb
+
 - name: ufw allow known services
   ufw:
     rule: allow
