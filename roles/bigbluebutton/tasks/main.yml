@@ -181,6 +181,13 @@
     - {id: hd, default: 'false'}
   notify: restart bbb
 
+- name: disable recording button
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: '^allowStartStopRecording='
+    line: 'allowStartStopRecording=false'
+  notify: restart bbb
+
 - name: ufw allow known services
   ufw:
     rule: allow
