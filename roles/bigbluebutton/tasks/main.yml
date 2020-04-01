@@ -169,7 +169,7 @@
   notify: restart bbb
 
 - name: set secret
-  command: bbb-conf --setsecret {{ bbb_secret }}
+  command: bbb-conf --setsecret {{ secrets[inventory_hostname].bigbluebutton }}
   notify: restart bbb
 
 - name: configure default camere quality

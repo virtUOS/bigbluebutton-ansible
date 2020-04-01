@@ -1,5 +1,13 @@
 ---
 
-bbb_secret: '{{ vault_bbb_secret }}'
-greenlight_secret: '{{ vault_greenlight_secret }}'
+# Secrets should have the following form
+# secrets:
+#  bbb01.example.com:
+#    bigbluebutton: ...
+#    greenlight: ...
+#  bbb02.example.com:
+#    bigbluebutton: ...
+#    greenlight: ...
+secrets: '{{ vault_secrets }}'
+
 email: lars@kiesow.io
