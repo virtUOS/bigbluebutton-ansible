@@ -64,9 +64,15 @@
       line: moderatorsJoinViaHTML5Client=true
   notify: restart bbb
 
+- name: check hostname
+  command: grep -q '^screenshareRtmpServer={{ inventory_hostname }}$' /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+  register: hostname_is_set
+  ignore_errors: true
+
 - name: set hostname in bbb
   command: bbb-conf --setip {{ inventory_hostname }}
   notify: restart bbb
+  when: hostname_is_set is failed
 
 - name: create nginx ssl directory
   file:
@@ -168,9 +174,15 @@
       replace: 'playback_protocol: https'
   notify: restart bbb
 
+- name: check secret
+  command: grep -q '^securitySalt={{ secrets[inventory_hostname].bigbluebutton }}$' /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+  register: secret_is_set
+  ignore_errors: true
+
 - name: set secret
   command: bbb-conf --setsecret {{ secrets[inventory_hostname].bigbluebutton }}
   notify: restart bbb
+  when: secret_is_set is failed
 
 - name: configure default camere quality
   replace:
