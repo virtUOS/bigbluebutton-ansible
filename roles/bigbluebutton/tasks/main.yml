@@ -5,6 +5,10 @@
     that: ansible_distribution == 'Ubuntu' and ansible_distribution_version == '16.04'
   when: not skip_distribution_check
 
+- name: allow apt to communicate via https
+  apt:
+    name: apt-transport-https
+
 - name: add additional repositories
   apt_repository:
     repo: '{{ item }}'
@@ -38,6 +42,7 @@
       - openjdk-8-jdk
       - nodejs
       - bigbluebutton
+      - ufw
   notify: restart bbb
 
 - name: install bbb-html5
