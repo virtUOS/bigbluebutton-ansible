@@ -2,7 +2,7 @@
 
 - name: fail early if OS is not supported
   assert:
-    that: ansible_distribution == 'Ubuntu' and ansible_distribution_version == '16.04'
+    that: ansible_distribution == 'Ubuntu' and ansible_distribution_version == '18.04'
   when: not skip_distribution_check
 
 - name: allow apt to communicate via https
@@ -16,30 +16,36 @@
   loop:
     - ppa:bigbluebutton/support
     - ppa:rmescandon/yq
-    - deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse
-    - deb https://deb.nodesource.com/node_8.x xenial main
-    - deb https://ubuntu.bigbluebutton.org/xenial-220/ bigbluebutton-xenial main
+    - ppa:libreoffice/ppa
+    - deb https://deb.nodesource.com/node_12.x bionic main
+    - deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse
+    - deb [ arch=amd64 ] http://ubuntu.openvidu.io/6.13.2 bionic kms6
+    - deb https://ubuntu.bigbluebutton.org/bionic-230-dev bigbluebutton-bionic main
 
 - name: add additional apt keys
   apt_key:
     url: '{{ item }}'
   loop:
-    - https://www.mongodb.org/static/pgp/server-3.4.asc
+    - https://www.mongodb.org/static/pgp/server-4.2.asc
     - https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc
 
-- name: add nodesource apt keys
+- name: add nodesource and kurento apt keys
   apt_key:
     keyserver: keyserver.ubuntu.com
-    id: 9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280
+    id: '{{ item }}'
+  loop:
+    - 9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280
+    - 234821A61B67740F89BFD669FC8A16625AFA7A83
 
 - name: install dependencies
   apt:
     update_cache: true
     name:
       - curl
+      - net-tools
       - mongodb-org
       - haveged
-      - openjdk-8-jdk
+      - build-essential
       - nodejs
       - bigbluebutton
       - ufw
@@ -190,15 +196,6 @@
     - path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
       regexp: ^bigbluebutton.web.serverURL=http://
       replace: bigbluebutton.web.serverURL=https://
-    - path: /usr/share/red5/webapps/screenshare/WEB-INF/screenshare.properties
-      regexp: ^jnlpUrl=http://
-      replace: jnlpUrl=https://
-    - path: /usr/share/red5/webapps/screenshare/WEB-INF/screenshare.properties
-      regexp: ^jnlpFile=http://
-      replace: jnlpFile=https://
-    - path: /var/www/bigbluebutton/client/conf/config.xml
-      regexp: http://
-      replace: https://
     - path: /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml
       regexp: ws://
       replace: wss://

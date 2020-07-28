@@ -6,7 +6,7 @@
 
 - name: add additional repositories
   apt_repository:
-    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
 
 - name: install dependencies
   apt:

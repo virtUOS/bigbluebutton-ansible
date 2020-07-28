@@ -47,18 +47,6 @@
       to: WARN
   notify: restart freeswitch
 
-- name: set red5 logback log level
-  replace:
-    path: /etc/red5/logback.xml
-    regexp: '{{ item.from }}'
-    replace: '{{ item.to }}'
-  loop:
-    - from: debug
-      to: warn
-    - from: info
-      to: warn
-  notify: restart bbb
-
 - name: set kurento log level
   lineinfile:
     dest: /etc/default/kurento-media-server
