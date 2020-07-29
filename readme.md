@@ -19,13 +19,12 @@ Important Notes
   Once deployed, replace them with valid certificates and reload Nginx.
 
 
-Todo
-----
+Initialization
+--------------
 
-Here are some things to expand on:
+### Greenlight on Ubuntu 16.04
 
-- [ ] Adding more configuration options.
-- [ ] Adding initial user setup
-- [ ] Improve the TLS setup for Nginx
-- [ ] Making this work on other distributions
-- [ ] Adding support for the [Scalable load balancer for BigBlueButton](https://github.com/blindsidenetworks/scalelite)
+```sh
+# Execute and change the password
+% docker exec greenlight-v2 bundle exec rake admin:create
+```
