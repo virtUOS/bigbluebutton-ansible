@@ -1,6 +1,0 @@
-[Unit]
-Description=Scheduled BigBlueButton Recording Cleanup
-
-[Service]
-Type=simple
-ExecStart=/bin/rm -rf /var/lib/kurento/screenshare/ /var/lib/kurento/recordings/ /var/bigbluebutton/recording/raw/
