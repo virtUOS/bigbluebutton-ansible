@@ -1,0 +1,8 @@
+<include>
+	<gateway name="sipgate.de">
+		<param name="proxy" value="sipgate.de"/>
+		<param name="username" value="{{ secrets[inventory_hostname].sip.user }}"/>
+		<param name="password" value="{{ secrets[inventory_hostname].sip.password }}"/>
+		<param name="extension" value="{{ secrets[inventory_hostname].sip.phone }}"/>
+	</gateway>
+</include>

@@ -1,4 +1,4 @@
 ---
 
 skip_distribution_check: false
-
+allow_recording: false

@@ -1,0 +1,83 @@
+---
+
+- name: turn off nginx access logs
+  replace:
+    path: /etc/nginx/sites-available/bigbluebutton
+    regexp: 'access_log.*;'
+    replace: access_log off;
+  notify: reload nginx
+
+- name: set log level to error
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: '^appLogLevel='
+    line: appLogLevel=Error
+  notify: restart bbb
+
+- name: set nginx log level
+  lineinfile:
+    dest: /etc/nginx/nginx.conf
+    regexp: '{{ item.from }}'
+    line: '{{ item.to }}'
+    state: present
+  loop:
+    - from: error_log
+      to: error_log /var/log/nginx/bigbluebutton.error.log;
+    - from: access_log
+      to: access_log off;
+  notify: reload nginx
+
+- name: set freeswitch log level
+  lineinfile:
+    dest: '/etc/bbb-fsesl-akka/application.conf'
+    regexp: ^  loglevel
+    line:   loglevel = "WARNING"
+    state: present
+  notify: restart freeswitch
+
+- name: set freewswitch logback log level
+  replace:
+    path: /etc/bbb-fsesl-akka/logback.xml
+    regexp: '{{ item.from }}'
+    replace: '{{ item.to }}'
+  loop:
+    - from: DEBUG
+      to: WARN
+    - from: INFO
+      to: WARN
+  notify: restart freeswitch
+
+- name: set red5 logback log level
+  replace:
+    path: /etc/red5/logback.xml
+    regexp: '{{ item.from }}'
+    replace: '{{ item.to }}'
+  loop:
+    - from: debug
+      to: warn
+    - from: info
+      to: warn
+  notify: restart bbb
+
+- name: set kurento log level
+  lineinfile:
+    dest: /etc/default/kurento-media-server
+    regexp: ^export GST_DEBUG=
+    line: 'export GST_DEBUG="1,Kurento*:1,kms*:1,sdp*:1,webrtc*:1,*rtpendpoint:1,rtp*handler:1,rtpsynchronizer:1,agnosticbin:1"'
+    state: present
+  notify: restart kurento
+
+- name: avoid kurento changing log level back
+  lineinfile:
+    dest: /usr/lib/systemd/system/kurento-media-server.service
+    regexp: 'ExecStart=/usr/bin/kurento-media-server '
+    line: 'ExecStart=/usr/bin/kurento-media-server --gst-debug-level=1 --gst-debug="1,Kurento*:1,kms*:1,KurentoWebSocketTransport:1"'
+    state: present
+  notify: restart kurento
+
+- name: configure bbb-webrtc-sfu log level
+  replace:
+    path: /usr/local/bigbluebutton/bbb-webrtc-sfu/config/default.yml
+    regexp: 'level: .*'
+    replace: 'level: error'
+  notify: restart bbb

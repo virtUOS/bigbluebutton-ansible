@@ -1,14 +1,13 @@
 ---
 
-# Secrets should have the following form
-# secrets:
-#  bbb01.example.com:
-#    bigbluebutton: ...
-#    greenlight: ...
-#  bbb02.example.com:
-#    bigbluebutton: ...
-#    greenlight: ...
-secrets: '{{ vault_secrets }}'
+secrets:
+  bbb-test.opencast-niedersachsen.de:
+    bigbluebutton: '{{ vault_bigbluebutton }}'
+    greenlight: '{{ vault_greenlight }}'
+    #sip:
+    #  phone: '{{ vault_sip.phone }}'
+    #  user: '{{ vault_sip.user }}'
+    #  password: '{{ vault_sip.password }}'
 
 container:
   greenlight:

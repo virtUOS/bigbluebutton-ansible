@@ -13,7 +13,7 @@
   apt_repository:
     repo: '{{ item }}'
     update_cache: no
-  with_items:
+  loop:
     - ppa:bigbluebutton/support
     - ppa:rmescandon/yq
     - deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse
@@ -23,11 +23,11 @@
 - name: add additional apt keys
   apt_key:
     url: '{{ item }}'
-  with_items:
+  loop:
     - https://www.mongodb.org/static/pgp/server-3.4.asc
     - https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc
 
-- name: add NodeSource apt keys
+- name: add nodesource apt keys
   apt_key:
     keyserver: keyserver.ubuntu.com
     id: 9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280
@@ -48,8 +48,7 @@
 - name: install bbb-html5
   apt:
     update_cache: true
-    name:
-      - bbb-html5
+    name: bbb-html5
   notify: restart bbb
 
 - name: make html5 client the default client
@@ -57,17 +56,30 @@
     path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
     regexp: '{{ item.regexp }}'
     line: '{{ item.line }}'
-  with_items:
+  loop:
     - regexp: ^attendeesJoinViaHTML5Client=
       line: attendeesJoinViaHTML5Client=true
     - regexp: ^moderatorsJoinViaHTML5Client=
       line: moderatorsJoinViaHTML5Client=true
   notify: restart bbb
 
+- name: turn off muted sound
+  replace:
+    path: /opt/freeswitch/etc/freeswitch/autoload_configs/conference.conf.xml
+    regexp: '{{ item.regexp }}'
+    replace: '{{ item.line }}'
+  loop:
+    - regexp: ' (<param name="muted-sound".*>)$'
+      line: ' <!--\1-->'
+    - regexp: ' (<param name="unmuted-sound".*>)$'
+      line: ' <!--\1-->'
+  notify: restart bbb
+
 - name: check hostname
   command: grep -q '^screenshareRtmpServer={{ inventory_hostname }}$' /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
   register: hostname_is_set
   ignore_errors: true
+  changed_when: False
 
 - name: set hostname in bbb
   command: bbb-conf --setip {{ inventory_hostname }}
@@ -89,10 +101,10 @@
     force: false
   notify: reload nginx
   loop:
-    - {source: certificate.pem,
-       target: '{{ inventory_hostname }}.crt'}
-    - {source: key.pem,
-       target: '{{ inventory_hostname }}.key'}
+    - source: certificate.pem
+      target: '{{ inventory_hostname }}.crt'
+    - source: key.pem
+      target: '{{ inventory_hostname }}.key'
 
 - name: diffie hellmann parameter from https://ssl-config.mozilla.org/ffdhe2048.txt
   copy:
@@ -115,22 +127,46 @@
     block: |
         server_name _;
         location / {
-        return 301 https://{{ inventory_hostname }}$request_uri;
+          return 301 https://{{ inventory_hostname }}$request_uri;
         }
         }
 
         server {
-        listen 443 ssl;
-        listen [::]:443 ssl;
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
 
         ssl_certificate /etc/nginx/ssl/{{ inventory_hostname }}.crt;
         ssl_certificate_key /etc/nginx/ssl/{{ inventory_hostname }}.key;
         ssl_session_cache shared:SSL:10m;
         ssl_session_timeout 10m;
-        ssl_protocols TLSv1.1 TLSv1.2;
+        ssl_protocols TLSv1.2;
         ssl_ciphers "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS:!AES256";
         ssl_prefer_server_ciphers on;
         ssl_dhparam /etc/nginx/ssl/dhparam.pem;
+        server_tokens off;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
+
+        set $csp_connect "connect-src 'self' wss: vimeo.com";
+        set $csp_font "font-src 'self' data: https://fonts.gstatic.com";
+        set $csp_img "img-src 'self' data: https:";
+        set $csp_media "media-src 'self' https:";
+        set $csp_frame "frame-src 'self' *.youtube.com player.vimeo.com *.dailymotion.com player.twitch.tv w.soundcloud.com";
+        set $csp_script "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.youtube.com *.ytimg.com *.vimeo.com *.twitch.tv *.dmcdn.net w.soundcloud.com";
+        set $csp_style "style-src 'self' 'unsafe-inline' data: ";
+        add_header Content-Security-Policy "default-src 'none'; ${csp_connect}; ${csp_font}; ${csp_frame}; ${csp_img}; ${csp_media}; ${csp_script}; ${csp_style}";
+
+        add_header X-Frame-Options "SAMEORIGIN";
+        add_header X-Content-Type-Options "nosniff";
+        add_header X-XSS-Protection "1; mode=block";
+
+        location /version {
+          alias /etc/bigbluebutton/bigbluebutton-release;
+          add_header content-type 'text/plain';
+          sub_filter 'BIGBLUEBUTTON_RELEASE='  '';
+          sub_filter '\n' '';
+          sub_filter_once on;
+          sub_filter_types '*';
+        }
   notify: reload nginx
 
 - name: configure NGINX for FreeSwitch
@@ -138,7 +174,7 @@
     path: /etc/bigbluebutton/nginx/sip.nginx
     regexp: '{{ item.regexp }}'
     replace: '{{ item.replace }}'
-  with_items:
+  loop:
     - regexp: proxy_pass http://
       replace: proxy_pass https://
     - regexp: :5066;
@@ -150,7 +186,7 @@
     path: '{{ item.path }}'
     regexp: '{{ item.regexp }}'
     replace: '{{ item.replace }}'
-  with_items:
+  loop:
     - path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
       regexp: ^bigbluebutton.web.serverURL=http://
       replace: bigbluebutton.web.serverURL=https://
@@ -178,6 +214,7 @@
   command: grep -q '^securitySalt={{ secrets[inventory_hostname].bigbluebutton }}$' /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
   register: secret_is_set
   ignore_errors: true
+  changed_when: false
 
 - name: set secret
   command: bbb-conf --setsecret {{ secrets[inventory_hostname].bigbluebutton }}
@@ -192,24 +229,103 @@
     regexp: 'default: *.*$'
     replace: 'default: {{ item.default }}'
   loop:
-    - {id: low, default: 'true'}
-    - {id: medium, default: 'false'}
-    - {id: high, default: 'false'}
-    - {id: hd, default: 'false'}
+    - id: low
+      default: 'true'
+    - id: medium
+      default: 'false'
+    - id: high
+      default: 'false'
+    - id: hd
+      default: 'false'
   notify: restart bbb
 
-- name: disable recording button
+- name: configure 720p hd camere quality
+  replace:
+    path: /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml
+    after: '- id: *hd'
+    before: '-'
+    regexp: '^( +)(bitrate: .*)[\s\S]*^( +enableScreensharing)'
+    replace: '\1\2\n\1constraints:\n\1  width: 1280\n\1  frameRate: 30\n\3'
+  notify: restart bbb
+
+- name: deactivate typing indicator
+  replace:
+    path: /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml
+    after: 'typingIndicator:'
+    before: 'note:'
+    regexp: 'enabled: true'
+    replace: 'enabled: false'
+  notify: restart bbb
+
+- name: deactivate application animations
+  replace:
+    path: /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml
+    after: 'application:'
+    before: 'audio:'
+    regexp: 'animations: true'
+    replace: 'animations: false'
+  notify: restart bbb
+
+- name: disable recording workflow
   lineinfile:
     path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
-    regexp: '^allowStartStopRecording='
-    line: 'allowStartStopRecording=false'
+    regexp: '^disableRecordingDefault='
+    line: disableRecordingDefault={{ 'false' if allow_recording else 'true' }}
   notify: restart bbb
+
+- name: configure sip in freeswitch
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    owner: freeswitch
+    group: daemon
+    mode: '0644'
+  loop:
+    - src: sipgate_dialplan.xml
+      dest: /opt/freeswitch/etc/freeswitch/dialplan/public/sipgate.xml
+    - src: sipgate_sip_profiles.xml
+      dest: /opt/freeswitch/etc/freeswitch/sip_profiles/external/sipgate.xml
+  when: secrets[inventory_hostname].sip is defined
+  notify: restart bbb
+
+- name: configure phone number
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.val }}'
+  loop:
+    - key: defaultDialAccessNumber
+      val: "{{ secrets[inventory_hostname].sip.phone \
+               if secrets[inventory_hostname].sip is defined \
+               else '613-555-1234' }}"
+    - key: defaultWelcomeMessageFooter
+      val: "{{ '<br><br>To join this meeting by phone, dial:<br>  %%DIALNUM%%<br>Then enter %%CONFNUM%% as the conference PIN number.' \
+               if secrets[inventory_hostname].sip is defined \
+               else '' }}"
+  notify: restart bbb
+
+- name: copy default presentation
+  copy:
+    src: default.pdf
+    dest: /var/www/bigbluebutton-default/default.pdf
+    mode: '0644'
+
+- name: tune system settings for redis
+  lineinfile:
+    path: /etc/sysctl.conf
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }} = {{ item.val }}"
+  loop:
+    - key: net.core.somaxconn
+      val: 1024
+    - key: vm.overcommit_memory
+      val: 1
 
 - name: ufw allow known services
   ufw:
     rule: allow
     name: '{{ item }}'
-  with_items:
+  loop:
     - OpenSSH
     - Nginx Full
 
@@ -219,8 +335,19 @@
     port: 16384:32768
     proto: udp
 
+- name: ufw allow SIP signaling
+  ufw:
+    rule: allow
+    port: '5060'
+    proto: udp
+    from_ip: 217.10.79.9
+  when: secrets[inventory_hostname].sip is defined
+
 - name: enable firewall
   ufw:
     state: enabled
     policy: reject
     logging: 'on'
+
+# configure logging
+- include_tasks: logging.yml
