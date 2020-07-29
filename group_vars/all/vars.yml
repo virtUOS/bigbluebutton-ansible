@@ -10,4 +10,7 @@
 #    greenlight: ...
 secrets: '{{ vault_secrets }}'
 
-email: lars@kiesow.io
+container:
+  greenlight:
+    image: docker.io/bigbluebutton/greenlight
+    tag: release-2.6.5

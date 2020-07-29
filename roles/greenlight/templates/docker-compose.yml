@@ -3,9 +3,9 @@ version: '2'
 services:
   app:
     entrypoint: [bin/start]
-    image: bigbluebutton/greenlight:v2
+    image: {{ container.greenlight.image }}:{{ container.greenlight.tag }}
     container_name: greenlight-v2
-    env_file: .env
+    env_file: greenlight.env
     restart: always
     ports:
       - 127.0.0.1:5000:80

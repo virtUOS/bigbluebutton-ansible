@@ -1,0 +1,7 @@
+[Unit]
+Description=Backup Greenlight Database
+
+[Service]
+Type=simple
+ExecStartPre=/bin/mkdir -p /opt/greenlight/backup/
+ExecStart=/bin/bash -c '/usr/bin/docker exec greenlight_db_1 pg_dumpall -U postgres | gzip > /opt/greenlight/backup/$$(date "+%%Y%%m%%d-%%H%%M%%S").sql.gz'

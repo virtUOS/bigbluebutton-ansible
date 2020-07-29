@@ -1,16 +1,12 @@
 ---
 
-- name: add additional repositories
-  apt_repository:
-    repo: '{{ item }}'
-  with_items:
-    - deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
-
 - name: add additional apt keys
   apt_key:
-    url: '{{ item }}'
-  with_items:
-    - https://download.docker.com/linux/ubuntu/gpg
+    url: https://download.docker.com/linux/ubuntu/gpg
+
+- name: add additional repositories
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
 
 - name: install dependencies
   apt:
@@ -27,15 +23,13 @@
     path: /opt/greenlight
 
 - name: create docker-compose
-  copy:
-    src: docker-compose.yml
-    dest: /opt/greenlight/docker-compose.yml
-    force: true
-
-- name: create config
   template:
-    src: env.j2
-    dest: /opt/greenlight/.env
+    src: '{{ item }}'
+    dest: /opt/greenlight/{{ item }}
+  loop:
+    - docker-compose.yml
+    - greenlight.env
+  notify: restart greenlight
 
 - name: copy nginx config
   copy:
@@ -55,8 +49,29 @@
         }
   notify: reload nginx
 
+- name: check greenlight status
+  shell: >
+    docker inspect greenlight-v2 | grep -q '"Status": *"running"'
+  register: greenlight_is_running
+  ignore_errors: true
+  changed_when: false
 
 - name: start greenlight
   command: docker-compose up -d
   args:
     chdir: /opt/greenlight
+  when: greenlight_is_running is failed
+
+- name: install database backup service
+  copy:
+    src: '{{ item }}'
+    dest: /etc/systemd/system/{{ item }}
+  loop:
+    - greenlight-backup-database.service
+    - greenlight-backup-database.timer
+
+- name: start database backup service
+  service:
+    name: greenlight-backup-database.timer
+    state: started
+    enabled: yes
