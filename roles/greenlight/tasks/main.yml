@@ -49,7 +49,7 @@
         }
   notify: reload nginx
 
-- name: check greenlight status
+- name: check greenlight status (allowed to fail)
   shell: >
     docker inspect greenlight-v2 | grep -q '"Status": *"running"'
   register: greenlight_is_running
