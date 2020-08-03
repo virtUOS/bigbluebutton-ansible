@@ -17,7 +17,7 @@
       - containerd.io
       - docker-compose
 
-- name: make base repository present
+- name: create base directory
   file:
     state: directory
     path: /opt/greenlight
