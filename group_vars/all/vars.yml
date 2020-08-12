@@ -1,7 +1,7 @@
 ---
 
 secrets:
-  bbb-test.opencast-niedersachsen.de:
+  bbb-next.opencast-niedersachsen.de:
     bigbluebutton: '{{ vault_bigbluebutton }}'
     greenlight: '{{ vault_greenlight }}'
     #sip:
