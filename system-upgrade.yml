@@ -17,3 +17,14 @@
       when: ansible_os_family == 'RedHat'
 
 - import_playbook: bigbluebutton.yml
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: execute bbb-conf --setip hostname
+    become: true
+    command: 'bbb-conf --setip {{ inventory_hostname }}'
+
+  - name: restart bbb
+    command: bbb-conf --restart
