@@ -7,6 +7,18 @@
     replace: access_log off;
   notify: reload nginx
 
+- name: bigbluebutton core log level
+  replace:
+    path: /usr/share/bbb-web/WEB-INF/classes/logback.xml
+    regexp: 'level="{{ item.from }}"'
+    replace: 'level="{{ item.to }}"'
+  loop:
+    - from: DEBUG
+      to: ERROR
+    - from: INFO
+      to: ERROR
+  notify: restart bbb
+
 - name: set log level to error
   lineinfile:
     path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
