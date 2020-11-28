@@ -12,4 +12,4 @@ secrets:
 container:
   greenlight:
     image: docker.io/bigbluebutton/greenlight
-    tag: release-2.7.7
+    tag: release-2.7.9
